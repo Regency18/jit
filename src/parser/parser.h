@@ -17,10 +17,34 @@
 
 /**
  * Checking if the next character is the correct character
- * @param token the token of the next token
+ * @param tokenArray the token of the next token
  * @return return true if it matches and return false if it doesn't
  */
 Token lookahead(TokenArray* tokenArray, int current);
+
+/**
+ *
+ * @param array array of tokens
+ * @param current current index
+ * @return Loop node
+ */
+Loop* loop(TokenArray* array, int* current);
+
+/**
+ *
+ * @param tokenArray array of parsed tokens
+ * @param current current index
+ * @return if statement node
+ */
+struct IfStmt* condition(TokenArray* tokenArray, int* current);
+
+/**
+ * returns indentifier for variable name
+ * @param array tokenarray
+ * @param current current index
+ * @return variable name
+ */
+const char* term(TokenArray* array, int *current);
 
 
 /**
@@ -28,14 +52,14 @@ Token lookahead(TokenArray* tokenArray, int current);
  * @param tokenArray array of tokens
  * @param current current index
  */
-void recursiveDescent(TokenArray* tokenArray, int* current);
+struct Node* recursiveDescent(TokenArray* tokenArray, int* current, struct Node* right);
 
 /**
  * function for functions
  * @param tokenArray array of tokens
  * @param current current index
  */
-void funcNode(TokenArray* tokenArray, int* current);
+FuncNode* func(TokenArray* tokenArray, int* current);
 
 struct Node* handleParen(TokenArray* array, int* current, int line);
 

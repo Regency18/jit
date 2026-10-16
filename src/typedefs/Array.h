@@ -9,19 +9,19 @@
 
 #include "TokenType.h"
 
-#define new_array(type)\
+#define new_array(type, name)\
     typedef struct {\
         type* items;\
         size_t size;\
         size_t capacity;\
-    } type##Array
+    } name##Array
 
-#define array_append(array, item)\
+#define array_append(type, array, item)\
     do {\
         if (array->size >= array->capacity) {\
             if (array->capacity == 0) array->capacity = 2;\
             else array->capacity *= 2;\
-            Token* ptr = realloc(array->items, array->capacity*sizeof(*array->items));\
+            type* ptr = realloc(array->items, array->capacity*sizeof(*array->items));\
             if(!ptr) break;\
             array->items = ptr;\
         }\

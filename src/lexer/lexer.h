@@ -8,7 +8,7 @@
 #include "../typedefs/Array.h"
 #include "../typedefs/khash.h"
 #include "../typedefs/TokenType.h"
-new_array(Token);
+new_array(Token, Token);
 
 KHASH_MAP_INIT_STR(tokenMap, TokenType);
 

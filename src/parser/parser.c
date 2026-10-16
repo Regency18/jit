@@ -74,12 +74,12 @@ const char* term(TokenArray* array, int *current) {
     return array->items[*current].lexeme;
 }
 
-struct Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, int line) {
+Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, int line) {
 
-    struct Node* lhs;
+    Node* lhs;
 
     //return node, must be Binary_expr
-    struct Node expression;
+    Node expression;
     expression.type = BINARY_EXPR;
 
     //atom token and atom lexeme
@@ -94,7 +94,7 @@ struct Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, in
         ptr1->token = token;
         ptr1->Variable = lexeme;
 
-        lhs = malloc(sizeof(struct Node));
+        lhs = malloc(sizeof(Node));
         lhs->type = VARIABLE_NODE;
         lhs->data.variableNode = ptr1;
     }
@@ -102,9 +102,9 @@ struct Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, in
 
 
     //set result to lhs
-    struct Node* result = lhs;
-    struct Node* new;
-    struct Node* rhs;
+    Node* result = lhs;
+    Node* new;
+    Node* rhs;
     BinaryExpr* bin;
 
     while (true) {
@@ -122,7 +122,7 @@ struct Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, in
         advance(current);
         rhs = prattParser(tokenArray, current, bp.rbp, line);
 
-        new = malloc(sizeof(struct Node));
+        new = malloc(sizeof(Node));
         result = new;
         bin = malloc(sizeof(BinaryExpr));
         bin->token = opToken;
@@ -134,15 +134,13 @@ struct Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, in
         result->data.binaryExpr = bin;
 
         lhs = result;
-
     }
-
     return result;
 }
 
-struct Node* handleParen(TokenArray* array, int* current, int line) {
+Node* handleParen(TokenArray* array, int* current, int line) {
     advance(current);
-    struct Node* expr = prattParser(array, current, 0, line);
+     Node* expr = prattParser(array, current, 0, line);
     if (lookahead(array, *current).type != PAREN_RIGHT) {
         //do error
     }
@@ -150,36 +148,116 @@ struct Node* handleParen(TokenArray* array, int* current, int line) {
     return expr;
 }
 
-char** handleFuncArgs(TokenArray* array, int* current) {
+void handleFuncArgs(TokenArray* array, int* current, StringArray* result) {
     advance(current);
-    char** result;
-    while () {
-
+    TokenType token = array->items[*current].type;
+    if (token == PAREN_RIGHT) {
+        advance(current);
+        return;
     }
 
+    while (token != PAREN_RIGHT) {
+        advance(current);
+        token = array->items[*current].type;
+        char* arg = (char*)array->items[*current].lexeme;
+        array_append(char*, result, arg);
 
+        //check for comma or right paren
+        advance(current);
+    }
+}
+
+Loop* loop(TokenArray* array, int* current) {
+    Loop* result = malloc(sizeof(Loop));
+    result->condition = prattParser(array, current, 0, array->items[*current].line);
+    advance(current);
+    result->body = recursiveDescent(array, current, result->body);
+    advance(current);
+    return result;
 }
 
 //handle function, if statement, loops, and expression
-void recursiveDescent(TokenArray* tokenArray, int* current) {
+Node* recursiveDescent(TokenArray* tokenArray, int* current,  Node* right) {
+    right = malloc(sizeof(Node));
     switch (tokenArray->items[*current].type) {
         case FUNC:
-            funcNode(tokenArray, current);
+            right->data.binaryExpr->left->data.funcNode = func(tokenArray, current);
             break;
-        default: break;
+        case IF: right->data.binaryExpr->left->data.ifStmt = condition(tokenArray, current);
+            break;
+        case FOR:
+        case WHILE:
+            right->data.binaryExpr->left->data.loopNode = loop(tokenArray, current);
+            break;
+        case NEWLINE:
+            free(right);
+            right = recursiveDescent(tokenArray, current, right);
+            break;
+        case END:
+            free(right);
+            right = NULL;
+            return right;
+        case IDENTIFIER: right->data.binaryExpr->left = prattParser(tokenArray, current, 0, tokenArray->items[*current].line);
+            break;
+        default:
+            //handle panic mode parsing
+            break;
     }
+
+    assert(tokenArray->items[*current].type == NEWLINE);
+    advance(current);
+    right->data.binaryExpr->right = recursiveDescent(tokenArray, current, right->data.binaryExpr->right);
+    return right;
 }
 
-void funcNode(TokenArray* tokenArray, int* current) {
-    FuncNode* function = malloc(sizeof(FuncNode));
+IfStmt* condition(TokenArray* array, int* current) {
+    IfStmt* result = malloc(sizeof(IfStmt));
+    int line = array->items[*current].line;
+    result->condition = prattParser(array, current, 0, line);
+
+    //check for left brace
+    advance(current);
+
+    result->body = recursiveDescent(array, current, result->body);
+
+    //check for right brace
+    advance(current);
+
+    if (lookahead(array, *current).type == ELSE) {
+        result->ifStmt = condition(array, current);
+    } else {
+        result->ifStmt = NULL;
+    }
+
+    //check for leftBrace
+    advance(current);
+
+    return result;
+}
+
+FuncNode* func(TokenArray* tokenArray, int* current) {
+    FuncNode* function;
+    function = malloc(sizeof(FuncNode));
     advance(current);
     function->name = tokenArray->items[*current].lexeme;
-    function->args = handleFuncArgs(tokenArray, current);
+    StringArray args;
+    handleFuncArgs(tokenArray, current, &args);
+    function->args = args;
+
+    //check for left brace
+    advance(current);
+
+    function->body = recursiveDescent(tokenArray, current, function->body);
+
+    //check for right brace
+    advance(current);
+
+    return function;
 }
 
 int main() {
-    TokenArray tokenArray = scanTokens("x = a + 5 + 3");
+    TokenArray tokenArray = scanTokens("x = 5\n if (x = 5) {\n x = 5\n}");
     int current = 0;
-    struct Node* parsedTree = prattParser(&tokenArray, &current, 0, 0);
+    Node* parsedTree = prattParser(&tokenArray, &current, 0, 0);
     free(parsedTree);
 }

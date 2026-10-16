@@ -45,13 +45,13 @@ void addSingleToken(const TokenType token, TokenArray* tokenArray, const char ke
     char* lexeme = turnCharIntoString(keyword);
     //add new token and keyword to array
     const Token newToken = {token, lexeme, *line};
-    array_append(tokenArray, newToken);
+    array_append(Token, tokenArray, newToken);
 }
 
 void addDoubleToken(const TokenType token, TokenArray* tokenArray, const char* lexeme, const int* line) {
     //add new token and keyword to array
     const Token newToken = {token, lexeme, *line};
-    array_append(tokenArray, newToken);
+    array_append(Token, tokenArray, newToken);
 }
 
 char* getLiteral(const int start, const int* current, const char* str) {
@@ -117,6 +117,7 @@ kh_tokenMap_t* makeMap() {
     khash_t(tokenMap) *map = kh_init(tokenMap);
     putToken(&k, map, "and", AND, &ret);
     putToken(&k, map, "else", ELSE, &ret);
+    putToken(&k, map, "elif", ELSE, &ret);
     putToken(&k, map, "for", FOR, &ret);
     putToken(&k, map, "if", IF, &ret);
     putToken(&k, map, "while", WHILE, &ret);
@@ -126,6 +127,7 @@ kh_tokenMap_t* makeMap() {
     putToken(&k, map, "return", RETURN, &ret);
     putToken(&k, map, "or", OR, &ret);
     putToken(&k, map, "func", FUNC, &ret);
+    putToken(&k, map, "print", PRINT, &ret);
 
     return map;
 }

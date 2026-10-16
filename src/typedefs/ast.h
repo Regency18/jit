@@ -5,27 +5,36 @@
 #ifndef JITVM_AST_H
 #define JITVM_AST_H
 
-#include "bool.h"
 #include "TokenType.h"
 #include "Array.h"
 
+new_array(char*, String);
+typedef struct IfStmt IfStmt;
+typedef struct Node Node;
+typedef struct Loop Loop;
+
 typedef struct {
     TokenType token;
-    struct Node* left;
-    struct Node* right;
+    Node* left;
+    Node* right;
 }BinaryExpr;
+
+struct Loop {
+    Node* condition;
+    Node* body;
+};
 
 typedef struct {
     const char* name;
-    struct Node* Nodes;
-    char** args;
+    Node* body;
+    StringArray args;
 }FuncNode;
 
-typedef struct {
-    BinaryExpr* expr;
-    struct Node* Nodes;
-    struct IfStmt* ifStmt;
-}IfStmt;
+struct IfStmt {
+    Node* condition;
+    Node* body;
+    IfStmt* ifStmt;
+};
 
 typedef struct {
     TokenType token;
@@ -45,9 +54,10 @@ struct Node{
     union {
         BinaryExpr* binaryExpr;
         FuncNode* funcNode;
-        struct Node* bodyNodes;
+        Node* bodyNodes;
         IfStmt* ifStmt;
         VariableNode* variableNode;
+        Loop* loopNode;
     } data;
 };
 
