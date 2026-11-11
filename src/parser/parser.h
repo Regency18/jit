@@ -4,7 +4,6 @@
 
 #ifndef JITVM_PARSER_H
 #define JITVM_PARSER_H
-#include "../typedefs/Array.h"
 #include "../typedefs/TokenType.h"
 #include "../typedefs/ast.h"
 
@@ -20,7 +19,7 @@
  * @param tokenArray the token of the next token
  * @return return true if it matches and return false if it doesn't
  */
-Token lookahead(TokenArray* tokenArray, int current);
+Token lookahead(const TokenArray* tokenArray, int current);
 
 /**
  *
@@ -44,7 +43,7 @@ struct IfStmt* condition(TokenArray* tokenArray, int* current);
  * @param current current index
  * @return variable name
  */
-const char* term(TokenArray* array, int *current);
+const char* term(const TokenArray* array, int *current);
 
 
 /**

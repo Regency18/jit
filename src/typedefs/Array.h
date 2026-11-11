@@ -7,8 +7,6 @@
 
 #include <stddef.h>
 
-#include "TokenType.h"
-
 #define new_array(type, name)\
     typedef struct {\
         type* items;\
@@ -27,5 +25,8 @@
         }\
         array->items[array->size++] = item;\
     } while(0)
+
+#define FREE_ARRAY(type, pointer, oldCount) \
+    reallocate(pointer, sizeof(type)*(oldCount), 0);
 
 #endif //JITVM_ARRAY_H

@@ -44,9 +44,9 @@ typedef struct {
 typedef enum {
     BINARY_EXPR,
     FUNCTION_EXPR,
-    NODE_ARRAY,
     IF_STMT,
-    VARIABLE_NODE
+    VARIABLE_NODE,
+    LOOP_NODE
 }MemberType;
 
 struct Node{

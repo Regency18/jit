@@ -219,7 +219,7 @@ TokenArray scanTokens(const char* str) {
     addDoubleToken(END, &array, "bitch", &line);
 
     return array;
-};
+}
 
 
 // LEXER_H

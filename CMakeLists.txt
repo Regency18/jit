@@ -15,7 +15,16 @@ add_executable(JitVM
         src/parser/parser.h
         src/parser/parser.c
         src/typedefs/ast.h
+        src/bytecode_comp/bc.c
+        src/bytecode_comp/common.h
+        src/bytecode_comp/debug.h
+        src/bytecode_comp/debug.c
+        src/vm/vm.h
+        src/vm/vm.c
 )
+
+add_subdirectory(src/bytecode_comp)
+add_subdirectory(src/vm)
 
 add_test(test
         test/lexerTest.c

@@ -53,16 +53,16 @@ Precedence getOperator(const char* op) {
     }
 }
 
-Token lookahead(TokenArray* array, int current) {
+Token lookahead(const TokenArray* array, int current) {
     return array->items[current + 1];
 
 }
 
-bool unary(TokenArray* array, int current) {
+bool unary(const TokenArray* array, int current) {
     return array->items[current].type == BANG || array->items[current].type == MINUS;
 }
 
-const char* term(TokenArray* array, int *current) {
+const char* term(const TokenArray* array, int *current) {
     if (unary(array, *current)) {
 
         assert(lookahead(array, *current).type == IDENTIFIER);
@@ -83,7 +83,7 @@ Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, int line)
     expression.type = BINARY_EXPR;
 
     //atom token and atom lexeme
-    TokenType token = tokenArray->items[*current].type;
+    const TokenType token = tokenArray->items[*current].type;
     const char* lexeme = term(tokenArray, current);
 
     //initial lhs with the first variable
@@ -103,28 +103,25 @@ Node* prattParser(TokenArray* tokenArray, int* current, double min_bp, int line)
 
     //set result to lhs
     Node* result = lhs;
-    Node* new;
-    Node* rhs;
-    BinaryExpr* bin;
 
     while (true) {
 
         advance(current);
         const char* op = tokenArray->items[*current].lexeme;
-        TokenType opToken = tokenArray->items[*current].type;
-        Precedence operator = getOperator(op);
-        Binding_powers bp = getBindingPower(operator);
+        const TokenType opToken = tokenArray->items[*current].type;
+        const Precedence operator = getOperator(op);
+        const Binding_powers bp = getBindingPower(operator);
 
         if (min_bp > bp.lbp) {
             --*current;
             break;
         }
         advance(current);
-        rhs = prattParser(tokenArray, current, bp.rbp, line);
+        Node *rhs = prattParser(tokenArray, current, bp.rbp, line);
 
-        new = malloc(sizeof(Node));
+        Node *new = malloc(sizeof(Node));
         result = new;
-        bin = malloc(sizeof(BinaryExpr));
+        BinaryExpr *bin = malloc(sizeof(BinaryExpr));
         bin->token = opToken;
         bin->left = lhs;
         bin->right = rhs;
@@ -148,7 +145,7 @@ Node* handleParen(TokenArray* array, int* current, int line) {
     return expr;
 }
 
-void handleFuncArgs(TokenArray* array, int* current, StringArray* result) {
+void handleFuncArgs(const TokenArray* array, int* current, StringArray* result) {
     advance(current);
     TokenType token = array->items[*current].type;
     if (token == PAREN_RIGHT) {
@@ -181,12 +178,16 @@ Node* recursiveDescent(TokenArray* tokenArray, int* current,  Node* right) {
     right = malloc(sizeof(Node));
     switch (tokenArray->items[*current].type) {
         case FUNC:
+            right->data.binaryExpr->left->type = FUNCTION_EXPR;
             right->data.binaryExpr->left->data.funcNode = func(tokenArray, current);
             break;
-        case IF: right->data.binaryExpr->left->data.ifStmt = condition(tokenArray, current);
+        case IF:
+            right->data.binaryExpr->left->type = IF_STMT;
+            right->data.binaryExpr->left->data.ifStmt = condition(tokenArray, current);
             break;
         case FOR:
         case WHILE:
+            right->data.binaryExpr->left->type = LOOP_NODE;
             right->data.binaryExpr->left->data.loopNode = loop(tokenArray, current);
             break;
         case NEWLINE:
@@ -197,14 +198,17 @@ Node* recursiveDescent(TokenArray* tokenArray, int* current,  Node* right) {
             free(right);
             right = NULL;
             return right;
-        case IDENTIFIER: right->data.binaryExpr->left = prattParser(tokenArray, current, 0, tokenArray->items[*current].line);
+        case IDENTIFIER:
+            right->type = BINARY_EXPR;
+            right->data.binaryExpr = malloc(sizeof(BinaryExpr));
+            right->data.binaryExpr->left = prattParser(tokenArray, current, 0, tokenArray->items[*current].line);
             break;
         default:
             //handle panic mode parsing
             break;
     }
 
-    assert(tokenArray->items[*current].type == NEWLINE);
+    assert(tokenArray->items[++*current].type == NEWLINE);
     advance(current);
     right->data.binaryExpr->right = recursiveDescent(tokenArray, current, right->data.binaryExpr->right);
     return right;
@@ -236,8 +240,7 @@ IfStmt* condition(TokenArray* array, int* current) {
 }
 
 FuncNode* func(TokenArray* tokenArray, int* current) {
-    FuncNode* function;
-    function = malloc(sizeof(FuncNode));
+    FuncNode *function = malloc(sizeof(FuncNode));
     advance(current);
     function->name = tokenArray->items[*current].lexeme;
     StringArray args;
@@ -258,6 +261,7 @@ FuncNode* func(TokenArray* tokenArray, int* current) {
 int main() {
     TokenArray tokenArray = scanTokens("x = 5\n if (x = 5) {\n x = 5\n}");
     int current = 0;
-    Node* parsedTree = prattParser(&tokenArray, &current, 0, 0);
+    Node* parsedTree;
+    parsedTree = recursiveDescent(&tokenArray, &current, parsedTree);
     free(parsedTree);
 }
